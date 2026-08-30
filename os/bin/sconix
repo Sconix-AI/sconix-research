@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# Sconix Research OS — one command. Thin on purpose.
+set -euo pipefail
+
+OS="$HOME/research/os"
+PROJECTS="$HOME/research/projects"
+RESEARCH="$HOME/research"
+
+usage() {
+  cat <<'EOF'
+sconix — Research OS
+
+  sconix new <name> ["question"] [--no-torch] [--no-gh]
+                             scaffold a project in ~/research/projects/
+                             (creates a private GitHub repo unless --no-gh)
+  sconix ls                   list projects + their status
+  sconix cap  <text...>       drop an idea into ~/research/inbox.md
+  sconix log  <text...>       add a line to ~/research/log.md
+  sconix compare [glob]       table of runs across all projects
+  sconix report <project>     render that project's report.qmd -> html
+  sconix sync <project>       re-apply the template (pull in engine/template updates)
+  sconix doctor               check the toolchain
+EOF
+}
+
+write_answers() {  # $1 = project dir ; uses $name $slug $question $torch
+  {
+    printf 'project_name\t%s\n' "$name"
+    printf 'project_slug\t%s\n' "$slug"
+    printf 'question\t%s\n' "$question"
+    printf 'use_torch\t%s\n' "$torch"
+  } > "$1/.sconix-answers"
+}
+
+read_answer() {  # $1 = file, $2 = key  -> value on stdout
+  awk -F'\t' -v k="$2" '$1==k{ print $2; exit }' "$1"
+}
+
+cmd="${1:-}"; shift || true
+
+case "$cmd" in
+  new)
+    name="${1:?usage: sconix new \"Name\" [\"research question\"] [--no-torch]}"
+    shift
+    torch=true gh=true question=""
+    for a in "$@"; do
+      case "$a" in
+        --no-torch) torch=false ;;
+        --torch) torch=true ;;
+        --no-gh) gh=false ;;
+        *) question="$a" ;;
+      esac
+    done
+    slug="$(echo "$name" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | sed 's/^-*//;s/-*$//')"
+    dest="$PROJECTS/$slug"
+    [ -e "$dest" ] && { echo "already exists: $dest"; exit 1; }
+    mkdir -p "$PROJECTS"
+    copier copy --trust --defaults \
+      --data project_name="$name" \
+      --data project_slug="$slug" \
+      --data question="$question" \
+      --data use_torch="$torch" \
+      --data sconixlib_path="$OS/sconixlib" \
+      --data created_at="$(date -Idate)" \
+      "$OS/template" "$dest"
+    write_answers "$dest"
+    git -C "$dest" init -q && git -C "$dest" add -A && git -C "$dest" commit -qm "scaffold $slug" || true
+    if [ "$gh" = true ] && command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+      gh repo create "$slug" --private --source "$dest" --remote origin --push \
+        && echo "   github: $(gh repo view "$slug" --json url -q .url 2>/dev/null)" \
+        || echo "   (skipped GitHub repo — 'gh repo create $slug' failed)"
+    fi
+    echo
+    echo "-> $dest"
+    echo "   cd ~/research/projects/$slug && task setup && task run"
+    ;;
+  ls)
+    for p in "$PROJECTS"/*/; do
+      [ -d "$p" ] || continue
+      s=$(grep -m1 '^status:' "$p/project.yaml" 2>/dev/null | awk '{print $2}')
+      printf "  %-28s %s\n" "$(basename "$p")" "${s:-?}"
+    done
+    ;;
+  cap)
+    [ $# -gt 0 ] || { echo "nothing to capture"; exit 1; }
+    printf -- '- [ ] %s  _(%s)_\n' "$*" "$(date '+%Y-%m-%d %H:%M')" >> "$RESEARCH/inbox.md"
+    echo "captured."
+    ;;
+  log)
+    [ $# -gt 0 ] || { echo "nothing to log"; exit 1; }
+    line="$(printf -- '- **%s** — %s' "$(date '+%Y-%m-%d')" "$*")"
+    awk -v l="$line" '
+      !done && /^- \*\*[0-9]/ { print l; done=1 }
+      { print }
+      END { if (!done) print l }
+    ' "$RESEARCH/log.md" > "$RESEARCH/log.md.tmp"
+    mv "$RESEARCH/log.md.tmp" "$RESEARCH/log.md"
+    echo "logged."
+    ;;
+  compare)
+    glob="${1:-$PROJECTS/*/results/*}"
+    uv run --project "$OS/sconixlib" python - "$glob" <<'PY'
+import sys
+from sconixlib import load_runs
+try:
+    import pandas as pd
+    pd.set_option("display.width", 180); pd.set_option("display.max_columns", 40)
+except ImportError:
+    pd = None
+df = load_runs(sys.argv[1])
+if not len(df):
+    print("no runs found for", sys.argv[1]); raise SystemExit
+cols = [c for c in ("name","status","final_loss","final_metric","duration_s","git_sha","run_dir") if c in df.columns]
+print(df[cols].to_string(index=False))
+PY
+    ;;
+  report)
+    proj="${1:?usage: sconix report <project>}"
+    dir="$PROJECTS/$proj"
+    [ -d "$dir" ] || { echo "no such project: $proj"; exit 1; }
+    ( cd "$dir" && TMPDIR=/tmp uv run quarto render report.qmd )
+    echo "-> $dir/report.html"
+    ;;
+  sync)
+    proj="${1:?usage: sconix sync <project>}"
+    dir="$PROJECTS/$proj"
+    [ -f "$dir/.sconix-answers" ] || { echo "no .sconix-answers in $dir"; exit 1; }
+    slug="$(basename "$dir")"
+    module="$(echo "$slug" | tr '-' '_')"
+    a_name="$(read_answer "$dir/.sconix-answers" project_name)"
+    a_q="$(read_answer "$dir/.sconix-answers" question)"
+    a_torch="$(read_answer "$dir/.sconix-answers" use_torch)"
+    ( cd "$dir" && git diff --quiet && git diff --cached --quiet ) || { echo "commit/stash changes in $proj first"; exit 1; }
+    copier copy --trust --overwrite --defaults \
+      --data project_name="$a_name" \
+      --data project_slug="$slug" \
+      --data module_name="$module" \
+      --data question="$a_q" \
+      --data use_torch="$a_torch" \
+      --data sconixlib_path="$OS/sconixlib" \
+      --data created_at="$(grep -m1 '^created:' "$dir/project.yaml" | awk '{print $2}')" \
+      "$OS/template" "$dir"
+    echo "synced. review with: git -C $dir diff"
+    ;;
+  doctor)
+    echo "Sconix Research OS — doctor"
+    for t in uv copier ruff pre-commit git gh quarto task; do
+      printf "  %-8s " "$t"; command -v "$t" >/dev/null && "$t" --version 2>/dev/null | head -1 || echo "MISSING"
+    done
+    printf "  %-8s " "gpu"; nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo "no nvidia-smi"
+    printf "  %-8s " "os"; [ -d "$OS/template" ] && echo "template ok" || echo "MISSING $OS/template"
+    ;;
+  ""|-h|--help|help) usage ;;
+  *) echo "unknown: $cmd"; usage; exit 1 ;;
+esac
