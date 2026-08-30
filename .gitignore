@@ -9,3 +9,4 @@ os/sconixlib/.venv/
 
 # generated projects are their own git repos
 projects/
+os/template/
