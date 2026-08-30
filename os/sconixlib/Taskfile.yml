@@ -1,0 +1,12 @@
+version: "3"
+
+tasks:
+  test:
+    cmds:
+      # inline TMPDIR: /mnt/* drives break unlink-while-open (pytest capture)
+      - TMPDIR=/tmp uv run pytest
+  lint:
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+      - TMPDIR=/tmp uv run pytest

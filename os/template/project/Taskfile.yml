@@ -1,0 +1,45 @@
+# Every project speaks the same 6 verbs.
+version: "3"
+
+vars:
+  # inline on python-spawning cmds — go-task env: won't override an ambient
+  # TMPDIR, and /mnt/* temp dirs break pytest capture + sqlite.
+  PY: TMPDIR=/tmp uv run
+
+tasks:
+  setup:
+    desc: Create the venv and install everything
+    cmds:
+      - TMPDIR=/tmp uv sync --all-groups
+      - "{{.PY}} python -c 'import sconixlib; print(\"sconixlib\", sconixlib.__version__, \"ok\")'"
+
+  run:
+    desc: "Run an experiment (default: exp001_smoke). Usage: task run -- exp002_foo"
+    cmds:
+      - "{{.PY}} python experiments/{{.CLI_ARGS | default \"exp001_smoke\"}}/run.py"
+
+  exp:
+    desc: "Scaffold a new experiment. Usage: task exp -- short-name"
+    cmds:
+      - "{{.PY}} python scripts/new_experiment.py {{.CLI_ARGS}}"
+
+  report:
+    desc: Render report.qmd -> report.html (needs quarto)
+    cmds:
+      - quarto render report.qmd
+
+  compare:
+    desc: Table of every run in results/
+    cmds:
+      - "{{.PY}} python -c 'from sconixlib import load_runs; import pandas as pd; df=load_runs(\"results/*\"); pd.set_option(\"display.width\",160); print(df.to_string() if len(df) else \"no runs yet\")'"
+
+  lint:
+    desc: Format + lint + fast tests
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+      - TMPDIR=/tmp uv run pytest
+
+  test:
+    cmds:
+      - TMPDIR=/tmp uv run pytest

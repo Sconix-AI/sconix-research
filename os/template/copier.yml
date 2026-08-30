@@ -1,0 +1,54 @@
+_subdirectory: project
+_templates_suffix: .jinja
+_envops:
+  keep_trailing_newline: true
+
+project_name:
+  type: str
+  help: Human-readable name, e.g. "Model Memory"
+
+project_slug:
+  type: str
+  help: Folder + distribution name
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+
+module_name:
+  type: str
+  help: Importable Python package name
+  default: "{{ project_slug | lower | replace('-', '_') }}"
+
+description:
+  type: str
+  default: ""
+
+question:
+  type: str
+  help: The one research question this project answers
+  default: ""
+
+python_version:
+  type: str
+  default: "3.12"
+
+use_torch:
+  type: bool
+  help: Add PyTorch (CUDA 12.8 build, for the RTX 5090)?
+  default: true
+
+sconixlib_path:
+  type: str
+  default: "/home/sconix/research/os/sconixlib"
+  when: false
+
+created_at:
+  type: str
+  default: "unset"
+  when: false
+
+_message_after_copy: |
+  Project ready at {{ _copier_conf.dst_path }}
+
+    cd {{ _copier_conf.dst_path }}
+    task setup           # create venv, install deps
+    task run             # run experiments/exp001_smoke
+    task exp -- my-idea  # scaffold a new experiment

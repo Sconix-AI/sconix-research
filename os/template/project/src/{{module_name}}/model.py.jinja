@@ -1,0 +1,37 @@
+"""Models for {{ project_name }}."""
+
+from __future__ import annotations
+
+{% if use_torch -%}
+import torch
+import torch.nn as nn
+
+
+class MLP(nn.Module):
+    def __init__(self, dim: int, hidden: int = 128, depth: int = 2):
+        super().__init__()
+        layers: list[nn.Module] = []
+        d = dim
+        for _ in range(depth):
+            layers += [nn.Linear(d, hidden), nn.GELU()]
+            d = hidden
+        layers += [nn.Linear(d, 1)]
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x).squeeze(-1)
+{%- else -%}
+import numpy as np
+
+
+class LinearModel:
+    """Closed-form least squares — a baseline you can beat."""
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "LinearModel":
+        X1 = np.c_[X, np.ones(len(X))]
+        self.coef_, *_ = np.linalg.lstsq(X1, y, rcond=None)
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return np.c_[X, np.ones(len(X))] @ self.coef_
+{%- endif %}
