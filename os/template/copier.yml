@@ -9,13 +9,21 @@ project_name:
 
 project_slug:
   type: str
-  help: Folder + distribution name
+  help: Folder + distribution name (letters/digits/hyphens)
   default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+  validator: >-
+    {% if not (project_slug | regex_search('^[a-z0-9][a-z0-9-]*[a-z0-9]$')) %}
+    must start/end with a letter or digit and contain only a-z 0-9 -
+    {% endif %}
 
 module_name:
   type: str
   help: Importable Python package name
   default: "{{ project_slug | lower | replace('-', '_') }}"
+  validator: >-
+    {% if not (module_name | regex_search('^[a-z][a-z0-9_]*$')) %}
+    must be a valid python identifier (a-z, 0-9, _; not starting with a digit)
+    {% endif %}
 
 description:
   type: str

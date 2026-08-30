@@ -27,7 +27,7 @@ import numpy as np
 class LinearModel:
     """Closed-form least squares — a baseline you can beat."""
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "LinearModel":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> LinearModel:
         X1 = np.c_[X, np.ones(len(X))]
         self.coef_, *_ = np.linalg.lstsq(X1, y, rcond=None)
         return self

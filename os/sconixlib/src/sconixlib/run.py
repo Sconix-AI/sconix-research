@@ -29,7 +29,7 @@ import subprocess
 import sys
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -117,7 +117,7 @@ class Run:
         self._git_sha = sha
 
     # -- lifecycle ---------------------------------------------------------
-    def __enter__(self) -> "Run":
+    def __enter__(self) -> Run:
         self._old_stdout = sys.stdout
         self._old_stderr = sys.stderr
         if self._capture_console:
@@ -137,7 +137,7 @@ class Run:
             "tags": self.tags,
             "git_sha": self._git_sha,
             "duration_s": round(time.time() - self._t0, 2),
-            "finished_at": datetime.now(timezone.utc).isoformat(),
+            "finished_at": datetime.now(UTC).isoformat(),
             "config": self.cfg,
             **self._summary,
         }

@@ -31,7 +31,7 @@ tasks:
   compare:
     desc: Table of every run in results/
     cmds:
-      - "{{.PY}} python -c 'from sconixlib import load_runs; import pandas as pd; df=load_runs(\"results/*\"); pd.set_option(\"display.width\",160); print(df.to_string() if len(df) else \"no runs yet\")'"
+      - "{{.PY}} python scripts/compare.py"
 
   lint:
     desc: Format + lint + fast tests

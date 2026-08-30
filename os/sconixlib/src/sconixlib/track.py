@@ -1,10 +1,10 @@
 """Read every run back as a table. No server, no database.
 
-    from sconixlib import load_runs
+from sconixlib import load_runs
 
-    df = load_runs("results/*")          # one project
-    df = load_runs("~/research/projects/*/results/*")   # everything
-    print(df.sort_values("final_loss").head())
+df = load_runs("results/*")          # one project
+df = load_runs("~/research/projects/*/results/*")   # everything
+print(df.sort_values("final_loss").head())
 """
 
 from __future__ import annotations
@@ -33,6 +33,8 @@ def load_runs(glob: str = "results/*"):
     base, _, pattern = glob.partition("*")
     rows = []
     for summ in Path(base or ".").glob("*" + pattern + "/summary.json"):
+        if summ.parent.is_symlink() or summ.parent.name in {"latest", "LATEST.txt"}:
+            continue  # 'latest' points at a real run dir already in the list
         try:
             data = json.loads(summ.read_text())
         except json.JSONDecodeError:

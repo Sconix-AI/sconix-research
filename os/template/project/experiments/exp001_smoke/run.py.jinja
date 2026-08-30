@@ -62,7 +62,7 @@ def main() -> None:
     set_seed(cfg["seed"])
 
     X, y = make_regression(cfg["dataset"]["n"], cfg["dataset"]["dim"], cfg["dataset"]["noise"])
-    split = int(0.8 * len(X))// 1
+    split = int(0.8 * len(X))
     Xtr, Xte, ytr, yte = X[:split], X[split:], y[:split], y[split:]
 
     with Run("exp001_smoke", config=cfg, tags=["smoke"]) as run:

@@ -21,7 +21,7 @@ def _deep_merge(base: dict, over: dict) -> dict:
 def load_config(*paths: str | Path, **overrides: Any) -> dict:
     """Left-to-right merge of YAML files, then keyword overrides win.
 
-        cfg = load_config("configs/default.yaml", "config.yaml", lr=1e-4)
+    cfg = load_config("configs/default.yaml", "config.yaml", lr=1e-4)
     """
     cfg: dict[str, Any] = {}
     for p in paths:
