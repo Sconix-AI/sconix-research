@@ -2,6 +2,10 @@
 
 A small engine that turns a question into a project, experiments, results, and a report — the same way every time, so the thinking is the only hard part.
 
+![architecture](docs/architecture.svg)
+
+_(source: `docs/architecture.dot` — `dot -Tsvg docs/architecture.dot -o docs/architecture.svg`)_
+
 ## The loop
 
 ```

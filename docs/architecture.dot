@@ -1,0 +1,83 @@
+// Sconix Research OS — architecture.
+// Render:  dot -Tsvg architecture.dot -o architecture.svg
+//          dot -Tpng -Gdpi=150 architecture.dot -o architecture.png
+digraph sconix {
+  rankdir=TB;
+  bgcolor="white";
+  fontname="DejaVu Sans";
+  labelloc="t";
+  fontsize=22;
+  label=<<b>Sconix Research OS</b><br/><font point-size="11" color="#6b7280">idea → project → experiments → results → report</font><br/> >;
+  nodesep=0.4;
+  ranksep=0.65;
+  margin="0.4";
+  pad="0.3";
+  compound=true;
+
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans",
+        fontsize=11, color="#8a8f98", fillcolor="#f4f5f7", penwidth=1.2,
+        margin="0.20,0.13"];
+  edge [fontname="DejaVu Sans", fontsize=9.5, color="#6b7280", arrowsize=0.75];
+
+  /* ---------- 1. capture ---------- */
+  subgraph cluster_capture {
+    label=<<b>1 · capture</b>>; fontsize=12;
+    style="rounded"; color="#c9ccd3"; bgcolor="#fbfbfc";
+    cap    [label="sconix cap  \"idea\"", fillcolor="#eef0f2"];
+    paper  [label="sconix paper  <arxiv|title>", fillcolor="#eef0f2"];
+    inbox  [label="inbox.md", shape=note, fillcolor="#ffffff"];
+    cap -> inbox;
+  }
+
+  /* ---------- 2. knowledge ---------- */
+  subgraph cluster_know {
+    label=<<b>2 · knowledge/  —  the map</b>>; fontsize=12;
+    style="rounded"; color="#e3c37a"; bgcolor="#fdf7ea";
+    notes  [label="papers/ · concepts/ · threads/", fillcolor="#fbeecb"];
+    tax    [label="TAXONOMY.md  —  5 facets\nobject · locus · mechanism · effect · evidence", fillcolor="#fbeecb"];
+    kidx   [label="index.md", shape=note, fillcolor="#ffffff"];
+    notes -> tax [label="classify"];
+    tax  -> kidx [label="sconix kindex"];
+  }
+
+  /* ---------- 3. engine ---------- */
+  subgraph cluster_engine {
+    label=<<b>3 · os/  —  the engine</b>>; fontsize=12;
+    style="rounded"; color="#8b93d6"; bgcolor="#f0f1fb";
+    lib  [label="sconixlib\nRun · load_config · set_seed · get_device · load_runs", fillcolor="#e4e6f8"];
+    tpl  [label="template  (copier, versioned)", fillcolor="#e4e6f8"];
+    cli  [label="sconix  CLI\nnew · sync · cap · log · compare · report · paper · kindex", fillcolor="#e4e6f8"];
+  }
+
+  /* ---------- 4. project ---------- */
+  subgraph cluster_project {
+    label=<<b>4 · projects/&lt;name&gt;/  —  every project identical in shape</b>>; fontsize=12;
+    style="rounded"; color="#6cc7bd"; bgcolor="#edf9f7";
+    verbs [label="task  setup · run · exp · compare · report · lab · lint · test", fillcolor="#d8f0ec"];
+    expd  [label="experiments/expNNN/\nhypothesis.md · config.yaml · run.py", fillcolor="#d8f0ec"];
+    run   [label="with Run(...)  ", fillcolor="#bfe8e1", penwidth=1.7];
+    res   [label="results/&lt;stamp&gt;__&lt;sha&gt;/\nconfig · env (git+gpu) · metrics.jsonl · summary.json",
+           shape=note, fillcolor="#ffffff"];
+    rep   [label="report.qmd  →  report.html   (Quarto)", fillcolor="#d8f0ec"];
+    verbs -> expd -> run -> res -> rep;
+  }
+
+  /* ---------- 5. backup ---------- */
+  gh [label="private GitHub   —   sconix-research-os · sconix-template · <project>",
+      shape=cylinder, fillcolor="#eef1f4", color="#9aa2ad"];
+
+  /* ---------- main flow between layers ---------- */
+  paper  -> notes  [label="  read"];
+  inbox  -> cli    [label="  sconix new", lhead=cluster_engine];
+  tpl    -> verbs  [label="  scaffold  /  sconix sync", lhead=cluster_project];
+  lib    -> run    [label="  editable install", color="#5b63c4", fontcolor="#5b63c4"];
+  kidx   -> expd   [label="  informs", style=dashed, constraint=false];
+  rep    -> gh     [style=dotted, label="  push"];
+  cli    -> gh     [style=dotted, constraint=false];
+
+  /* ---------- feedback loops ---------- */
+  res   -> verbs [label="sconix compare → next experiment", style=dashed,
+                  color="#2f9e91", fontcolor="#2f9e91", constraint=false];
+  verbs -> lib   [label="projects improve the engine\nedit once → every project gets it",
+                  style=dashed, color="#5b63c4", fontcolor="#5b63c4", constraint=false];
+}
