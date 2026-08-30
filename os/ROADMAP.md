@@ -17,8 +17,10 @@ for existing projects.
 - [x] **GitHub Actions** in the template (`.github/workflows/ci.yml`: ruff + pytest, CPU-only)
 - [x] **`gh repo create`** wired into `sconix new` (private repo + push, unless `--no-gh`)
 - [x] **JupyterLab** as a `notebook` dep group — `task lab`
+- [x] **Knowledge base** (`~/research/knowledge/`) — faceted paper/concept/thread notes, `sconix paper|concept|thread|kindex|kfind`, arXiv metadata fetch
 - [ ] **rclone or DVC** for `data/` and `models/` — pick DVC only if you need pipeline caching, else rclone to a cheap bucket
 - [ ] second template: `paper-reproduction` (extract it the 2nd time you clone a paper repo by hand)
+- [ ] knowledge ↔ experiments: index `applied_in:` so a paper note shows which runs used it
 
 ## Phase 3 — when experiment count outgrows `task compare`
 - lightweight tracker: **aim** (local UI, no server) before MLflow

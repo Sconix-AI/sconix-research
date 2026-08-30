@@ -5,6 +5,8 @@ set -euo pipefail
 OS="$HOME/research/os"
 PROJECTS="$HOME/research/projects"
 RESEARCH="$HOME/research"
+KNOW="$HOME/research/knowledge"
+PYLIB="uv run --project $OS/sconixlib"
 
 usage() {
   cat <<'EOF'
@@ -19,8 +21,25 @@ sconix — Research OS
   sconix compare [glob]       table of runs across all projects
   sconix report <project>     render that project's report.qmd -> html
   sconix sync <project>       re-apply the template (pull in engine/template updates)
+
+  sconix paper <arxiv-url|"title">   scaffold a paper note (fetches arXiv metadata)
+  sconix concept <name>              scaffold a concept note
+  sconix thread <name>               scaffold a research-thread note
+  sconix kindex                      rebuild knowledge/index.md
+  sconix kfind <text>                grep the knowledge base
+
   sconix doctor               check the toolchain
 EOF
+}
+
+new_know() {  # $1 = kind (concept|thread), $2.. = name
+  local kind="$1"; shift
+  local name="$*"
+  local slug; slug="$(echo "$name" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | sed 's/^-*//;s/-*$//')"
+  local dest="$KNOW/${kind}s/$slug.md"
+  [ -e "$dest" ] && { echo "exists: $dest"; exit 1; }
+  sed -e "s/TITLE/$name/" -e "s/ADDED/$(date -Idate)/" "$KNOW/_templates/$kind.md" > "$dest"
+  echo "created ${kind}s/$slug.md"
 }
 
 write_answers() {  # $1 = project dir ; uses $name $slug $question $torch
@@ -142,6 +161,19 @@ PY
       "$OS/template" "$dir"
     echo "synced. review with: git -C $dir diff"
     ;;
+  paper)
+    $PYLIB python "$KNOW/new_paper.py" "$@"
+    ;;
+  concept) new_know concept "${@:?name required}" ;;
+  thread)  new_know thread  "${@:?name required}" ;;
+  kindex)
+    ( cd "$KNOW" && $PYLIB python build_index.py )
+    ;;
+  kfind)
+    [ $# -gt 0 ] || { echo "usage: sconix kfind <text>"; exit 1; }
+    grep -rn --include='*.md' -i -- "$*" "$KNOW/papers" "$KNOW/concepts" "$KNOW/threads" \
+      | sed "s#$KNOW/##" || echo "no matches"
+    ;;
   doctor)
     echo "Sconix Research OS — doctor"
     for t in uv copier ruff pre-commit git gh quarto task; do
@@ -149,6 +181,7 @@ PY
     done
     printf "  %-8s " "gpu"; nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo "no nvidia-smi"
     printf "  %-8s " "os"; [ -d "$OS/template" ] && echo "template ok" || echo "MISSING $OS/template"
+    printf "  %-8s " "know"; [ -f "$KNOW/index.md" ] && echo "$(ls "$KNOW/papers"/*.md 2>/dev/null | wc -l) papers indexed" || echo "run: sconix kindex"
     ;;
   ""|-h|--help|help) usage ;;
   *) echo "unknown: $cmd"; usage; exit 1 ;;
