@@ -1,0 +1,19 @@
+# Regression tests for the engine itself.
+version: "3"
+
+tasks:
+  test:
+    desc: Test sconixlib + generate both project variants and lint them
+    cmds:
+      - task: test-lib
+      - task: test-template
+
+  test-lib:
+    dir: sconixlib
+    cmds:
+      - TMPDIR=/tmp uv run pytest
+
+  test-template:
+    desc: Generate torch + non-torch projects, assert they lint clean and run
+    cmds:
+      - bash test_template.sh
