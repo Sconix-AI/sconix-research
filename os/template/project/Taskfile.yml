@@ -24,9 +24,14 @@ tasks:
       - "{{.PY}} python scripts/new_experiment.py {{.CLI_ARGS}}"
 
   report:
-    desc: Render report.qmd -> report.html (needs quarto)
+    desc: Render report.qmd -> report.html
     cmds:
-      - quarto render report.qmd
+      - TMPDIR=/tmp uv run quarto render report.qmd
+
+  lab:
+    desc: Launch JupyterLab in ./notebooks
+    cmds:
+      - "{{.PY}} jupyter lab --notebook-dir=notebooks --no-browser"
 
   compare:
     desc: Table of every run in results/

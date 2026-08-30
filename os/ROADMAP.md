@@ -11,12 +11,14 @@ for existing projects.
 - `sconix` CLI: new / ls / cap / log / compare / doctor
 - Taskfile verbs: setup / run / exp / compare / report / lint / test
 
-## Phase 2 — when you have 2-3 live projects
-- **Quarto** installed system-wide (report.qmd already written; just `task report`)
-- **pre-commit** running ruff + a metadata check
-- **GitHub Actions**: run `task test` on push; `gh repo create` in `sconix new`
-- **rclone or DVC** for `data/` and `models/` — pick DVC only if you need pipeline caching, else rclone to a cheap bucket
-- second template: `paper-reproduction`
+## Phase 2 — partly done (2026-08-29)
+- [x] **Quarto** installed (`~/.local/quarto`, v1.6.40) — `task report` / `sconix report <proj>`
+- [x] **pre-commit** in the template (`.pre-commit-config.yaml`, ruff + hygiene hooks) — `uv run pre-commit install`
+- [x] **GitHub Actions** in the template (`.github/workflows/ci.yml`: ruff + pytest, CPU-only)
+- [x] **`gh repo create`** wired into `sconix new` (private repo + push, unless `--no-gh`)
+- [x] **JupyterLab** as a `notebook` dep group — `task lab`
+- [ ] **rclone or DVC** for `data/` and `models/` — pick DVC only if you need pipeline caching, else rclone to a cheap bucket
+- [ ] second template: `paper-reproduction` (extract it the 2nd time you clone a paper repo by hand)
 
 ## Phase 3 — when experiment count outgrows `task compare`
 - lightweight tracker: **aim** (local UI, no server) before MLflow

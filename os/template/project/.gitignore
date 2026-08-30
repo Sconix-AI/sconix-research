@@ -19,4 +19,6 @@ models/
 
 report.html
 report_files/
+report.qmd_files/
 .quarto/
+.jupyter/
